@@ -1,0 +1,6 @@
+    # .gitlab/agents/my-kapsule-poc-agent/config.yaml
+    gitops:
+      manifest_projects:
+        - id: your-group/kapsule-agent-config # Use the path to your current GitLab project
+          paths:
+            - glob: '/manifests/*.yaml' # Agent will sync all YAML files in the 'manifests' directory

@@ -1,0 +1,57 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+packages:
+  - curl
+  - openssh-server
+  - ca-certificates
+  - tzdata
+  - perl
+  - net-tools
+  - iproute2
+  - gnupg
+
+write_files:
+  - path: /usr/local/bin/setup-gitlab.rb.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+
+      # Get the private IP address
+      export PRIVATE_IP=$(ip a | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | cut -d'/' -f1)
+      echo "Detected private IP: $PRIVATE_IP"
+
+      cat <<EOF > /etc/gitlab/gitlab.rb
+      external_url "http://$PRIVATE_IP"
+
+      # Restrict GitLab to private IP
+      nginx['listen_addresses'] = ["$PRIVATE_IP"]
+
+      # Enable GitLab Kubernetes Agent Server (KAS)
+      gitlab_kas['enable'] = true
+      gitlab_kas['listen_address'] = "$PRIVATE_IP:8150"
+      gitlab_kas['external_address'] = "grpc://$PRIVATE_IP:8150"
+
+      gitlab_rails['gitlab_kas_enabled'] = true
+      gitlab_rails['gitlab_kas_internal_url'] = "grpc://$PRIVATE_IP:8150"
+      gitlab_rails['gitlab_kas_external_url'] = "grpc://$PRIVATE_IP:8150"
+
+      # Set initial root password
+      gitlab_rails['initial_root_password'] = "your_strong_password"
+
+      # Optional: restrict NGINX access to local subnet
+      nginx['custom_gitlab_server_config'] = "allow 10.0.0.0/8;\ndeny all;"
+      EOF
+
+runcmd:
+  - echo "[Init] Installing GitLab package repo..."
+  - curl -sS https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh | bash
+  - echo "[Init] Installing GitLab CE..."
+  - apt-get install -y gitlab-ce
+  - echo "[Init] Creating gitlab.rb from detected private IP..."
+  - /usr/local/bin/setup-gitlab.rb.sh
+  - echo "[Init] Running gitlab-ctl reconfigure..."
+  - gitlab-ctl reconfigure
+  - echo "[Init] Verifying KAS is listening..."
+  - ss -tulnp | grep 8150 || echo "KAS is not listening"
+
