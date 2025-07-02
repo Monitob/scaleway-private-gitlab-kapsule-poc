@@ -4,6 +4,7 @@ This repository provides a Proof of Concept (POC) demonstrating secure, private 
 The primary integration method showcased is the GitLab Agent for Kubernetes, which facilitates a robust and secure connection for CI/CD deployments and GitOps workflows.
 
 🚀 Architecture Overview
+``` text
 +---------------------------+       +-----------------------------------+
 |      Scaleway Project     |       |           Scaleway Kapsule        |
 |                           |       |          Kubernetes Cluster       |
@@ -33,7 +34,7 @@ The primary integration method showcased is the GitLab Agent for Kubernetes, whi
        | (SSH/HTTPS for initial setup)
        v
   Your Local Machine
-
+```
 ✨ Features Demonstrated
 Private Network Setup: Both GitLab and Kapsule reside on a shared Scaleway Private Network.
 
